@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NHLH7JR0K2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NHLH7JR0K2');
+</script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="phone">
+    <div class="screen">
+      <div class="score-bar">
+        <span class="score-label">Score</span>
+        <span id="score">0</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="game" width="400" height="400"></canvas>
+        <div id="overlay" class="overlay">
+          <h1 id="overlay-title">Snake</h1>
+          <p id="overlay-message">Catch the mouse with arrow keys</p>
+          <button id="overlay-btn" type="button">Start</button>
+          <p id="overlay-hint-start" class="overlay-hint">Press Enter or Space</p>
+          <button id="overlay-btn-difficulty" type="button">Easy</button>
+          <p id="overlay-hint-difficulty" class="overlay-hint">Click to select difficulty</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
