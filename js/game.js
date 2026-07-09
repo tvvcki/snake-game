@@ -45,6 +45,7 @@ export function createInitialState() {
       x: mid + 5,
       y: mid,
       direction: { x: 1, y: 0 },
+      lastDirection: { x: 1, y: 0 },
       movesUntilTurn: 3,
       color: COLORS.mouse,
       earColor: COLORS.mouseEar,
@@ -154,6 +155,7 @@ export function spawnMouse(state) {
     x,
     y,
     direction,
+    lastDirection: direction,
     movesUntilTurn: randomMovesUntilTurn(),
     color: colors.mouse,
     earColor: colors.mouseEar,
@@ -250,6 +252,7 @@ export function tickMouse(state) {
   if (canMouseMoveTo(state, nextX, nextY)) {
     state.mouse.x = nextX;
     state.mouse.y = nextY;
+    state.mouse.lastDirection = { ...state.mouse.direction };
     state.mouse.movesUntilTurn -= 1;
   }
 }
@@ -262,6 +265,39 @@ export function setDirection(state, x, y) {
     setVisualCue(state, 'turn', 6);
   }
   state.nextDirection = next;
+}
+
+function drawMouse(ctx, state, mouseX, mouseY, mouseRadius) {
+  let mouseColor = state.mouse.color || COLORS.mouse;
+
+  if (state.visualCue.type === 'eat') {
+    mouseColor = '#38bdf8';
+  } else if (state.visualCue.type === 'dead') {
+    mouseColor = '#ef4444';
+  }
+
+  const triangleSize = Math.max(5, mouseRadius);
+  const renderDirection = state.mouse.lastDirection || state.mouse.direction || { x: 1, y: 0 };
+  const dirX = renderDirection.x;
+  const dirY = renderDirection.y;
+  const perpendicularX = -dirY;
+  const perpendicularY = dirX;
+  const tipX = mouseX + dirX * triangleSize;
+  const tipY = mouseY + dirY * triangleSize;
+  const baseX = mouseX - dirX * triangleSize * 0.45;
+  const baseY = mouseY - dirY * triangleSize * 0.45;
+  const leftX = baseX + perpendicularX * triangleSize * 0.55;
+  const leftY = baseY + perpendicularY * triangleSize * 0.55;
+  const rightX = baseX - perpendicularX * triangleSize * 0.55;
+  const rightY = baseY - perpendicularY * triangleSize * 0.55;
+
+  ctx.fillStyle = mouseColor;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(leftX, leftY);
+  ctx.lineTo(rightX, rightY);
+  ctx.closePath();
+  ctx.fill();
 }
 
 export function draw(ctx, state) {
@@ -288,22 +324,16 @@ export function draw(ctx, state) {
 
   let snakeHeadColor = COLORS.snakeHead;
   let snakeBodyColor = COLORS.snakeBody;
-  let mouseColor = state.mouse.color || COLORS.mouse;
-  let mouseEarColor = state.mouse.earColor || COLORS.mouseEar;
 
   if (state.visualCue.type === 'turn') {
     snakeHeadColor = '#facc15';
     snakeBodyColor = '#fde68a';
   } else if (state.visualCue.type === 'eat') {
-    mouseColor = '#38bdf8';
-    mouseEarColor = '#7dd3fc';
     snakeHeadColor = '#4ade4a';
     snakeBodyColor = '#a7f3d0';
   } else if (state.visualCue.type === 'dead') {
     snakeHeadColor = '#f87171';
     snakeBodyColor = '#fb7185';
-    mouseColor = '#ef4444';
-    mouseEarColor = '#fca5a5';
   }
 
   if (state.visualCue.ticks > 0) {
@@ -313,17 +343,7 @@ export function draw(ctx, state) {
     }
   }
 
-  ctx.fillStyle = mouseColor;
-  ctx.beginPath();
-  ctx.arc(mouseX, mouseY, mouseRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = mouseEarColor;
-  const earRadius = mouseRadius * 0.35;
-  ctx.beginPath();
-  ctx.arc(mouseX - earRadius, mouseY - earRadius, earRadius, 0, Math.PI * 2);
-  ctx.arc(mouseX + earRadius, mouseY - earRadius, earRadius, 0, Math.PI * 2);
-  ctx.fill();
+  drawMouse(ctx, state, mouseX, mouseY, mouseRadius);
 
   state.snake.forEach((seg, index) => {
     const padding = 1;
