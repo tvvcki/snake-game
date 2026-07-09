@@ -48,20 +48,17 @@ export function createInitialState() {
       lastDirection: { x: 1, y: 0 },
       movesUntilTurn: 3,
       color: COLORS.mouse,
-      earColor: COLORS.mouseEar,
     },
     score: 0,
     status: 'idle',
     gridSize: GRID_SIZE,
     difficulty: DIFFICULTY.EASY,
     visualCue: { type: 'none', ticks: 0 },
-    lastEvent: 'none',
   };
 }
 
 export function setVisualCue(state, type, ticks = 6) {
   state.visualCue = { type, ticks };
-  state.lastEvent = type;
 }
 
 function isReverse(current, next) {
@@ -158,7 +155,6 @@ export function spawnMouse(state) {
     lastDirection: direction,
     movesUntilTurn: randomMovesUntilTurn(),
     color: colors.mouse,
-    earColor: colors.mouseEar,
   };
 }
 
@@ -178,7 +174,6 @@ export function resetGame(state) {
   state.score = 0;
   state.status = 'playing';
   state.visualCue = { type: 'none', ticks: 0 };
-  state.lastEvent = 'none';
   spawnMouse(state);
 }
 
@@ -267,7 +262,7 @@ export function setDirection(state, x, y) {
   state.nextDirection = next;
 }
 
-function drawMouse(ctx, state, mouseX, mouseY, mouseRadius) {
+function drawMouse(ctx, state, mouseX, mouseY) {
   let mouseColor = state.mouse.color || COLORS.mouse;
 
   if (state.visualCue.type === 'eat') {
@@ -276,7 +271,7 @@ function drawMouse(ctx, state, mouseX, mouseY, mouseRadius) {
     mouseColor = '#ef4444';
   }
 
-  const triangleSize = Math.max(5, mouseRadius);
+  const triangleSize = Math.max(5, CELL_SIZE / 2 - 3);
   const renderDirection = state.mouse.lastDirection || state.mouse.direction || { x: 1, y: 0 };
   const dirX = renderDirection.x;
   const dirY = renderDirection.y;
@@ -300,7 +295,7 @@ function drawMouse(ctx, state, mouseX, mouseY, mouseRadius) {
   ctx.fill();
 }
 
-export function draw(ctx, state) {
+function drawGrid(ctx, state) {
   ctx.fillStyle = COLORS.background;
   ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
@@ -317,24 +312,46 @@ export function draw(ctx, state) {
     ctx.lineTo(CANVAS_SIZE, pos);
     ctx.stroke();
   }
+}
+
+function getSnakeColors(state) {
+  let headColor = COLORS.snakeHead;
+  let bodyColor = COLORS.snakeBody;
+
+  if (state.visualCue.type === 'turn') {
+    headColor = '#facc15';
+    bodyColor = '#fde68a';
+  } else if (state.visualCue.type === 'eat') {
+    headColor = '#4ade4a';
+    bodyColor = '#a7f3d0';
+  } else if (state.visualCue.type === 'dead') {
+    headColor = '#f87171';
+    bodyColor = '#fb7185';
+  }
+
+  return { headColor, bodyColor };
+}
+
+function drawSnake(ctx, state) {
+  const { headColor, bodyColor } = getSnakeColors(state);
+
+  state.snake.forEach((seg, index) => {
+    const padding = 1;
+    ctx.fillStyle = index === 0 ? headColor : bodyColor;
+    ctx.fillRect(
+      seg.x * CELL_SIZE + padding,
+      seg.y * CELL_SIZE + padding,
+      CELL_SIZE - padding * 2,
+      CELL_SIZE - padding * 2
+    );
+  });
+}
+
+export function draw(ctx, state) {
+  drawGrid(ctx, state);
 
   const mouseX = state.mouse.x * CELL_SIZE + CELL_SIZE / 2;
   const mouseY = state.mouse.y * CELL_SIZE + CELL_SIZE / 2;
-  const mouseRadius = CELL_SIZE / 2 - 3;
-
-  let snakeHeadColor = COLORS.snakeHead;
-  let snakeBodyColor = COLORS.snakeBody;
-
-  if (state.visualCue.type === 'turn') {
-    snakeHeadColor = '#facc15';
-    snakeBodyColor = '#fde68a';
-  } else if (state.visualCue.type === 'eat') {
-    snakeHeadColor = '#4ade4a';
-    snakeBodyColor = '#a7f3d0';
-  } else if (state.visualCue.type === 'dead') {
-    snakeHeadColor = '#f87171';
-    snakeBodyColor = '#fb7185';
-  }
 
   if (state.visualCue.ticks > 0) {
     state.visualCue.ticks -= 1;
@@ -343,16 +360,6 @@ export function draw(ctx, state) {
     }
   }
 
-  drawMouse(ctx, state, mouseX, mouseY, mouseRadius);
-
-  state.snake.forEach((seg, index) => {
-    const padding = 1;
-    ctx.fillStyle = index === 0 ? snakeHeadColor : snakeBodyColor;
-    ctx.fillRect(
-      seg.x * CELL_SIZE + padding,
-      seg.y * CELL_SIZE + padding,
-      CELL_SIZE - padding * 2,
-      CELL_SIZE - padding * 2
-    );
-  });
+  drawMouse(ctx, state, mouseX, mouseY);
+  drawSnake(ctx, state);
 }
